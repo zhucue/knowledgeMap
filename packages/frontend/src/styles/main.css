@@ -1,0 +1,202 @@
+:root {
+  --color-primary: #4F46E5;
+  --color-primary-light: #818CF8;
+  --color-branch: #7C3AED;
+  --color-leaf: #10B981;
+  --color-bg: #F9FAFB;
+  --color-surface: #FFFFFF;
+  --color-text: #111827;
+  --color-text-secondary: #6B7280;
+  --color-border: #E5E7EB;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+.btn-primary:hover {
+  background: var(--color-primary-light);
+}
+
+.search-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-input:focus {
+  border-color: var(--color-primary);
+}
+
+.placeholder {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 40px;
+}
+
+/* Home */
+.home {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 80px 20px;
+  text-align: center;
+}
+.home-header h1 {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+.home-header p {
+  color: var(--color-text-secondary);
+  margin-bottom: 40px;
+}
+.search-section {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+.topic-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.topic-tag {
+  padding: 6px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.topic-tag:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* GraphChat */
+.graph-chat {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.graph-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.graph-chat-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+.mindmap-panel {
+  flex: 1;
+  border-right: 1px solid var(--color-border);
+}
+.mindmap-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-panel {
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.chat-input-area {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.chat-input-area input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+/* History */
+.history-view {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+.history-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 20px 0;
+}
+.history-tabs button {
+  padding: 8px 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+.history-tabs button.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Resources */
+.resources-view {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+.resources-toolbar {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+.resources-toolbar input,
+.resources-toolbar select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  outline: none;
+}
+.resources-toolbar input {
+  flex: 1;
+}
