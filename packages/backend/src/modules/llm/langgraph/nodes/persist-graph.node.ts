@@ -48,6 +48,11 @@ export async function persistGraphNode(
     state.parentNodeContext?.nodeId || null,
   );
 
+  // 展开模式下标记父节点为已展开
+  if (state.parentNodeContext?.nodeId) {
+    await graphService.markNodeExpanded(state.parentNodeContext.nodeId);
+  }
+
   // Save resource associations
   if (state.resourceMatches.length > 0) {
     await saveResourceAssociations(

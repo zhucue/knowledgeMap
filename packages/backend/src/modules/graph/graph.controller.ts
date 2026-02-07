@@ -11,12 +11,14 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { GraphService } from './graph.service';
+import { TopicService } from '../topic/topic.service';
 import { GraphGenerationWorkflow } from '../llm/langgraph/graph-generation.workflow';
 
 @Controller('graph')
 export class GraphController {
   constructor(
     private readonly graphService: GraphService,
+    private readonly topicService: TopicService,
     private readonly workflow: GraphGenerationWorkflow,
   ) {}
 
@@ -41,6 +43,22 @@ export class GraphController {
     res.flushHeaders();
 
     try {
+      // 检查是否存在已完成的同主题图谱（缓存复用）
+      const cached = await this.graphService.findCompletedByTopic(topic);
+      if (cached) {
+        await this.topicService.incrementSearchCount(cached.topicId);
+        res.write(
+          `data: ${JSON.stringify({
+            step: 'complete',
+            progress: 100,
+            message: '已有相同主题图谱，直接返回',
+            data: { graphId: cached.id, graph: cached, fromCache: true },
+          })}\n\n`,
+        );
+        res.end();
+        return;
+      }
+
       const result = await this.workflow.run(topic, {
         userId: userId ? parseInt(userId, 10) : undefined,
         provider,
@@ -82,6 +100,13 @@ export class GraphController {
   ) {
     if (!body.topic) {
       throw new HttpException('topic is required', HttpStatus.BAD_REQUEST);
+    }
+
+    // 检查是否存在已完成的同主题图谱（缓存复用）
+    const cached = await this.graphService.findCompletedByTopic(body.topic);
+    if (cached) {
+      await this.topicService.incrementSearchCount(cached.topicId);
+      return cached;
     }
 
     const result = await this.workflow.run(body.topic, {
@@ -137,11 +162,77 @@ export class GraphController {
   }
 
   /**
-   * 根据ID获取图谱详情
+   * SSE 流式展开子节点
    */
-  @Get(':id')
-  getGraph(@Param('id') id: string) {
-    return this.graphService.findById(parseInt(id, 10));
+  @Get(':id/expand/:nodeId/stream')
+  async expandNodeStream(
+    @Param('id') graphId: string,
+    @Param('nodeId') nodeId: string,
+    @Query('depth') depth: string,
+    @Res() res: Response,
+  ) {
+    const gId = parseInt(graphId, 10);
+    const nId = parseInt(nodeId, 10);
+
+    const graph = await this.graphService.findById(gId);
+    if (!graph) {
+      throw new HttpException('Graph not found', HttpStatus.NOT_FOUND);
+    }
+
+    const { node, path } = await this.graphService.getNodeWithPath(nId);
+    if (!node) {
+      throw new HttpException('Node not found', HttpStatus.NOT_FOUND);
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    try {
+      await this.workflow.run(graph.topic?.name || graph.title, {
+        graphId: gId,
+        parentNodeContext: {
+          nodeId: nId,
+          nodeLabel: node.label,
+          nodeDescription: node.description || '',
+          path,
+        },
+        config: {
+          generateDepth: depth ? parseInt(depth, 10) : 2,
+        },
+        onProgress: (event) => {
+          res.write(`data: ${JSON.stringify(event)}\n\n`);
+        },
+      });
+
+      // 返回新创建的子节点
+      const updatedGraph = await this.graphService.findById(gId);
+      const newNodes = updatedGraph?.nodes.filter(
+        (n) => n.parentId === nId && n.id !== nId,
+      );
+
+      res.write(
+        `data: ${JSON.stringify({
+          step: 'complete',
+          progress: 100,
+          message: '节点展开完成',
+          data: { parentNodeId: nId, newNodes },
+        })}\n\n`,
+      );
+      res.end();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      res.write(
+        `data: ${JSON.stringify({
+          step: 'error',
+          progress: 0,
+          message: msg,
+        })}\n\n`,
+      );
+      res.end();
+    }
   }
 
   /**
@@ -158,5 +249,13 @@ export class GraphController {
       page ? parseInt(page, 10) : 1,
       pageSize ? parseInt(pageSize, 10) : 20,
     );
+  }
+
+  /**
+   * 根据ID获取图谱详情（树形结构）
+   */
+  @Get(':id')
+  getGraph(@Param('id') id: string) {
+    return this.graphService.findByIdWithTree(parseInt(id, 10));
   }
 }

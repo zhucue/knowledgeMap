@@ -22,12 +22,13 @@ export function generateTreePrompt(
   analysis: { domain: string; scope: string; difficulty: string },
   config: GenerationConfig,
   parentContext?: ParentNodeContext | null,
+  previousIssues?: string[],
 ): string {
   if (parentContext) {
-    return generateExpandPrompt(userInput, analysis, config, parentContext);
+    return generateExpandPrompt(userInput, analysis, config, parentContext, previousIssues);
   }
 
-  return `你是一个知识结构化专家。请为以下主题生成知识结构树。
+  let prompt = `你是一个知识结构化专家。请为以下主题生成知识结构树。
 
 主题: "${userInput}"
 领域: ${analysis.domain}
@@ -71,6 +72,12 @@ export function generateTreePrompt(
 }
 
 只返回 JSON，不要其他内容。`;
+
+  if (previousIssues?.length) {
+    prompt += `\n\n上一次生成存在以下问题，请修正：\n${previousIssues.map((i) => `- ${i}`).join('\n')}`;
+  }
+
+  return prompt;
 }
 
 // 构建节点扩展示意图提示词
@@ -79,9 +86,10 @@ function generateExpandPrompt(
   analysis: { domain: string; scope: string; difficulty: string },
   config: GenerationConfig,
   parentContext: ParentNodeContext,
+  previousIssues?: string[],
 ): string {
   const pathStr = parentContext.path.join(' → ');
-  return `你是一个知识结构化专家。请为以下知识节点生成子知识结构。
+  let prompt = `你是一个知识结构化专家。请为以下知识节点生成子知识结构。
 
 原始主题: "${userInput}"
 当前节点: "${parentContext.nodeLabel}"
@@ -108,6 +116,12 @@ function generateExpandPrompt(
 }
 
 只返回 JSON，不要其他内容。`;
+
+  if (previousIssues?.length) {
+    prompt += `\n\n上一次生成存在以下问题，请修正：\n${previousIssues.map((i) => `- ${i}`).join('\n')}`;
+  }
+
+  return prompt;
 }
 
 // 构建资源匹配提示词

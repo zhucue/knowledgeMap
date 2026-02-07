@@ -26,6 +26,23 @@ export class GraphService {
   ) {}
 
   /**
+   * 根据话题名称查找已完成的图谱（缓存复用）
+   * @param topicName 话题名称
+   * @returns 最新的已完成图谱，不存在则返回 null
+   */
+  async findCompletedByTopic(topicName: string): Promise<KnowledgeGraphEntity | null> {
+    const normalizedName = topicName.trim().toLowerCase().replace(/\s+/g, '');
+    return this.graphRepo.findOne({
+      where: {
+        status: 'completed',
+        topic: { normalizedName },
+      },
+      relations: ['topic', 'nodes', 'nodes.nodeResources', 'nodes.nodeResources.resource'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
    * 根据ID查找图谱
    * @param id 图谱ID
    * @returns 包含话题和节点关联数据的图谱实体
@@ -115,10 +132,60 @@ export class GraphService {
     return this.nodeResourceRepo.save(entity);
   }
 
+  /**
+   * 标记节点为已展开
+   * @param nodeId 节点ID
+   */
+  async markNodeExpanded(nodeId: number) {
+    await this.nodeRepo.update(nodeId, { isExpanded: true });
+  }
+
   async findNodesByGraphId(graphId: number) {
     return this.nodeRepo.find({
       where: { graphId },
       order: { depthLevel: 'ASC', sortOrder: 'ASC' },
     });
+  }
+
+  /**
+   * 根据ID查找图谱并返回树形结构
+   * 将扁平节点列表构建为嵌套树
+   * @param id 图谱ID
+   * @returns 图谱实体（nodes 替换为树形结构的 nodeTree）
+   */
+  async findByIdWithTree(id: number) {
+    const graph = await this.findById(id);
+    if (!graph) return null;
+
+    const nodeTree = this.buildTree(graph.nodes);
+    return { ...graph, nodeTree };
+  }
+
+  /**
+   * 将扁平节点列表构建为嵌套树结构
+   * @param nodes 扁平节点数组
+   * @returns 树形根节点数组
+   */
+  private buildTree(nodes: GraphNodeEntity[]) {
+    type TreeNodeEntity = GraphNodeEntity & { children: TreeNodeEntity[] };
+    const nodeMap = new Map<number, TreeNodeEntity>();
+    const roots: TreeNodeEntity[] = [];
+
+    // 初始化所有节点
+    for (const node of nodes) {
+      nodeMap.set(node.id, { ...node, children: [] } as TreeNodeEntity);
+    }
+
+    // 构建父子关系
+    for (const node of nodes) {
+      const treeNode = nodeMap.get(node.id)!;
+      if (node.parentId && nodeMap.has(node.parentId)) {
+        nodeMap.get(node.parentId)!.children.push(treeNode);
+      } else {
+        roots.push(treeNode);
+      }
+    }
+
+    return roots;
   }
 }

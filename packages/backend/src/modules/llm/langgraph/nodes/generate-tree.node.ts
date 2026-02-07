@@ -16,6 +16,7 @@ export async function generateTreeNode(
     state.analysis,
     state.config,
     state.parentNodeContext,
+    state.validation?.issues,
   );
 
   const result = await llmService.chatCompletion(
