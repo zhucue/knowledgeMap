@@ -102,13 +102,6 @@
 - 响应统一包装: `{ code: 200, message: 'success', data }`
 - SSE 事件格式: `data: { step, progress, message, data? }\n\n`
 
-## 关键架构决策
-
-- 参考 `DESIGN.md` 获取完整设计文档 (数据库 9 张表、LangGraph 工作流、前端页面结构)
-- 图谱分层加载: 首次生成 2 层，点击展开再生成 2 层
-- 对话关联图谱: `chat_sessions.graph_id` + `chat_messages.context_node_id`
-- 资源匹配: 标签匹配 + LLM 评分，每节点最多关联 3 个资源
-
 ## 常用命令
 
 ```bash
