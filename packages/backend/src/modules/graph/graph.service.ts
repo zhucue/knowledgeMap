@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KnowledgeGraphEntity } from './entities/knowledge-graph.entity';
 import { GraphNodeEntity } from './entities/graph-node.entity';
+import { NodeResourceEntity } from '../resource/entities/node-resource.entity';
 
 /**
  * 图谱服务
@@ -20,6 +21,8 @@ export class GraphService {
     private readonly graphRepo: Repository<KnowledgeGraphEntity>,
     @InjectRepository(GraphNodeEntity)
     private readonly nodeRepo: Repository<GraphNodeEntity>,
+    @InjectRepository(NodeResourceEntity)
+    private readonly nodeResourceRepo: Repository<NodeResourceEntity>,
   ) {}
 
   /**
@@ -70,7 +73,7 @@ export class GraphService {
    * @param maxDepth 最大深度（可选）
    */
   async updateGraphStatus(id: number, status: string, nodeCount?: number, maxDepth?: number) {
-    const update: Partial<KnowledgeGraphEntity> = { status };
+    const update: any = { status };
     if (nodeCount !== undefined) update.nodeCount = nodeCount;
     if (maxDepth !== undefined) update.maxDepth = maxDepth;
     await this.graphRepo.update(id, update);
@@ -98,11 +101,24 @@ export class GraphService {
     if (!node) throw new Error('Node not found');
 
     const path: string[] = [node.label];
-    let current = node;
+    let current: GraphNodeEntity | null = node;
     while (current.parentId) {
       current = await this.nodeRepo.findOne({ where: { id: current.parentId } });
       if (current) path.unshift(current.label);
+      else break;
     }
     return { node, path };
+  }
+
+  async saveNodeResource(data: Partial<NodeResourceEntity>) {
+    const entity = this.nodeResourceRepo.create(data);
+    return this.nodeResourceRepo.save(entity);
+  }
+
+  async findNodesByGraphId(graphId: number) {
+    return this.nodeRepo.find({
+      where: { graphId },
+      order: { depthLevel: 'ASC', sortOrder: 'ASC' },
+    });
   }
 }
