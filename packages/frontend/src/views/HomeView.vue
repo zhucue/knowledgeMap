@@ -17,13 +17,26 @@
             class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
             @keyup.enter="handleGenerate"
           />
-          <button
-            class="px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          <SplitButton
             :disabled="!searchTopic.trim()"
             @click="handleGenerate"
           >
+            <template #icon>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M9 3V15M3 9H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </template>
             生成图谱
-          </button>
+            <template #menu>
+              <ProviderMenu
+                v-model="selectedProvider"
+                :providers="availableProviders"
+                :is-testing="isTesting"
+                :test-result="testResult"
+                @test="testConnection"
+              />
+            </template>
+          </SplitButton>
         </div>
       </div>
 
@@ -82,10 +95,92 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import apiClient from '@/services/api.client';
+import SplitButton from '@/components/common/SplitButton.vue';
+import ProviderMenu from '@/components/common/ProviderMenu.vue';
+
+interface Provider {
+  name: string;
+  label: string;
+  model: string;
+}
 
 const router = useRouter();
 const searchTopic = ref('');
+const selectedProvider = ref('');
+const availableProviders = ref<Provider[]>([]);
 const hotTopics = ref<{ id: number; name: string }[]>([]);
+const isTesting = ref(false);
+const testResult = ref<{ success: boolean; message: string } | null>(null);
+
+/**
+ * 加载可用的 Provider 列表
+ */
+async function loadProviders() {
+  try {
+    const providers = await apiClient.get('/llm/providers');
+    availableProviders.value = providers.map((p: any) => ({
+      name: p.name,
+      label: getProviderLabel(p.name),
+      model: p.model,
+    }));
+
+    // 默认选择第一个可用的 Provider
+    if (!selectedProvider.value && availableProviders.value.length > 0) {
+      selectedProvider.value = availableProviders.value[0].name;
+    }
+  } catch (error) {
+    console.error('Failed to load providers:', error);
+  }
+}
+
+/**
+ * 获取 Provider 显示名称
+ */
+function getProviderLabel(name: string): string {
+  const labels: Record<string, string> = {
+    openai: 'OpenAI',
+    claude: 'Claude',
+    tongyi: '通义千问',
+    doubao: '豆包',
+  };
+  return labels[name] || name;
+}
+
+/**
+ * 测试 Provider 连接
+ */
+async function testConnection() {
+  if (!selectedProvider.value) return;
+
+  isTesting.value = true;
+  testResult.value = null;
+
+  try {
+    const response = await apiClient.post('/llm/test', {
+      provider: selectedProvider.value,
+    });
+
+    if (response.success) {
+      testResult.value = {
+        success: true,
+        message: '连接成功！',
+      };
+    } else {
+      testResult.value = {
+        success: false,
+        message: response.error || '连接失败',
+      };
+    }
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.message || error.message || '连接失败';
+    testResult.value = {
+      success: false,
+      message: errorMsg,
+    };
+  } finally {
+    isTesting.value = false;
+  }
+}
 
 /**
  * 处理生成图谱
@@ -93,18 +188,29 @@ const hotTopics = ref<{ id: number; name: string }[]>([]);
  */
 function handleGenerate() {
   if (!searchTopic.value.trim()) return;
-  router.push({ name: 'graph-chat', query: { topic: searchTopic.value.trim() } });
+
+  const query: any = { topic: searchTopic.value.trim() };
+  if (selectedProvider.value) {
+    query.provider = selectedProvider.value;
+  }
+
+  router.push({ name: 'graph-chat', query });
 }
 
 /**
  * 加载热门主题
  */
-onMounted(async () => {
+async function loadHotTopics() {
   try {
     const result = await apiClient.get('/topics/hot', { params: { limit: 8 } });
     hotTopics.value = result;
   } catch (error) {
     console.error('Failed to load hot topics:', error);
   }
+}
+
+onMounted(async () => {
+  await loadProviders();
+  await loadHotTopics();
 });
 </script>

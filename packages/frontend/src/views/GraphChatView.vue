@@ -83,14 +83,15 @@ const treeData = computed(() => graphStore.currentGraph?.nodeTree?.[0] || null);
 onMounted(async () => {
   const topic = route.query.topic as string;
   const graphId = route.query.graphId as string;
+  const provider = route.query.provider as string;
 
   try {
     if (graphId) {
       // 加载已有图谱
       await graphStore.loadGraph(parseInt(graphId, 10));
     } else if (topic) {
-      // 生成新图谱
-      await graphStore.generateGraph(topic);
+      // 生成新图谱，传递 provider 参数
+      await graphStore.generateGraph(topic, provider);
     }
 
     // 创建或加载对话会话
