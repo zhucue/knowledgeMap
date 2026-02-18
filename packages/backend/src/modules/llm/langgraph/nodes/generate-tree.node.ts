@@ -21,7 +21,7 @@ export async function generateTreeNode(
 
   const result = await llmService.chatCompletion(
     [{ role: 'user', content: prompt }],
-    { temperature: 0.7, responseFormat: 'json', maxTokens: 4096 },
+    { temperature: 0.7, responseFormat: 'json', maxTokens: 8192 },
     state.provider,
   );
 

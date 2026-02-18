@@ -21,7 +21,12 @@ export class TongyiProvider implements ILlmProvider {
     this.model = this.configService.get('LLM_TONGYI_MODEL', 'qwen-plus');
     this.client = new OpenAI({
       apiKey: this.configService.get('LLM_TONGYI_API_KEY'),
-      baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      baseURL: this.configService.get(
+        'LLM_TONGYI_BASE_URL',
+        'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      ),
+      timeout: 120000, // 120秒超时
+      maxRetries: 2, // 最多重试2次
     });
   }
 

@@ -9,26 +9,25 @@ import {
 } from './llm-provider.interface';
 
 /**
- * 豆包 LLM Provider
+ * DeepSeek LLM Provider
  * 使用 OpenAI SDK 兼容接口
  */
 @Injectable()
-export class DoubaoProvider implements ILlmProvider {
-  readonly name = 'doubao';
+export class DeepseekProvider implements ILlmProvider {
+  readonly name = 'deepseek';
   readonly model: string;
   private client: OpenAI;
 
   constructor(private readonly configService: ConfigService) {
-    // 从环境变量读取豆包配置
-    this.model = this.configService.get('LLM_DOUBAO_MODEL', 'doubao-pro-32k');
+    this.model = this.configService.get('LLM_DEEPSEEK_MODEL', 'deepseek-chat');
     this.client = new OpenAI({
-      apiKey: this.configService.get('LLM_DOUBAO_API_KEY'),
+      apiKey: this.configService.get('LLM_DEEPSEEK_API_KEY'),
       baseURL: this.configService.get(
-        'LLM_DOUBAO_BASE_URL',
-        'https://ark.cn-beijing.volces.com/api/v3',
+        'LLM_DEEPSEEK_BASE_URL',
+        'https://api.deepseek.com/v1',
       ),
-      timeout: 300000, // 300秒超时（5分钟）
-      maxRetries: 1, // 最多重试1次
+      timeout: 180000, // 180秒超时
+      maxRetries: 3, // 最多重试3次
     });
   }
 
@@ -91,10 +90,14 @@ export class DoubaoProvider implements ILlmProvider {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      await this.client.models.list();
+      await this.chatCompletion(
+        [{ role: 'user', content: 'ping' }],
+        { maxTokens: 5 },
+      );
       return true;
     } catch {
       return false;
     }
   }
 }
+

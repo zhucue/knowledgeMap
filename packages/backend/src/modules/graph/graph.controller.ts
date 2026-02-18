@@ -47,12 +47,14 @@ export class GraphController {
       const cached = await this.graphService.findCompletedByTopic(topic);
       if (cached) {
         await this.topicService.incrementSearchCount(cached.topicId);
+        // 构建树形结构后返回，确保前端能正确渲染
+        const graphWithTree = await this.graphService.findByIdWithTree(cached.id);
         res.write(
           `data: ${JSON.stringify({
             step: 'complete',
             progress: 100,
             message: '已有相同主题图谱，直接返回',
-            data: { graphId: cached.id, graph: cached, fromCache: true },
+            data: { graphId: cached.id, graph: graphWithTree, fromCache: true },
           })}\n\n`,
         );
         res.end();
@@ -68,7 +70,7 @@ export class GraphController {
       });
 
       // Send final complete graph data
-      const graph = await this.graphService.findById(result.graphId);
+      const graph = await this.graphService.findByIdWithTree(result.graphId);
       res.write(
         `data: ${JSON.stringify({
           step: 'complete',

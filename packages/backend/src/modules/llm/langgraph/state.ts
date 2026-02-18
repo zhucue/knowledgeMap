@@ -71,6 +71,6 @@ export type GraphGenerationState = typeof GraphGenerationAnnotation.State;
 // 默认配置
 export const DEFAULT_CONFIG: GenerationConfig = {
   maxChildrenPerNode: 8,
-  generateDepth: 2,
+  generateDepth: 3,
   maxTotalDepth: 4,
 };

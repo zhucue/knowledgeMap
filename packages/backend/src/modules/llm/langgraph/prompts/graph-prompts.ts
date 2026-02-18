@@ -37,10 +37,11 @@ export function generateTreePrompt(
 
 要求:
 - 根节点为主题本身
-- 第一层: 3-${Math.min(6, config.maxChildrenPerNode)} 个核心分支
-- 第二层: 每个分支下 2-${Math.min(5, config.maxChildrenPerNode)} 个子知识点
-- 总节点数不超过 25 个
-- 每个节点的 description 不超过 50 字
+- 第一层: 3-${Math.min(6, config.maxChildrenPerNode)} 个核心分支（type 为 "branch"）
+- 第二层: 每个分支下 2-${Math.min(5, config.maxChildrenPerNode)} 个子知识点（type 为 "branch"）
+- 第三层: 每个子知识点下 1-3 个具体要点（type 为 "leaf"）
+- 总节点数不超过 40 个
+- 每个节点的 description 需包含具体知识要点，不超过 100 字
 - isExpandable 表示该节点是否值得继续深入展开
 
 请返回严格 JSON 格式:
@@ -54,17 +55,26 @@ export function generateTreePrompt(
     {
       "key": "branch_1",
       "label": "分支名称",
-      "description": "分支描述",
+      "description": "分支描述，包含该分支的核心概念和要点",
       "type": "branch",
       "isExpandable": true,
       "children": [
         {
-          "key": "leaf_1_1",
-          "label": "知识点名称",
-          "description": "知识点描述",
-          "type": "leaf",
+          "key": "branch_1_1",
+          "label": "子知识点名称",
+          "description": "子知识点描述，包含具体知识要点",
+          "type": "branch",
           "isExpandable": true,
-          "children": []
+          "children": [
+            {
+              "key": "leaf_1_1_1",
+              "label": "具体要点名称",
+              "description": "具体要点的详细说明，包含定义、原理或应用场景",
+              "type": "leaf",
+              "isExpandable": false,
+              "children": []
+            }
+          ]
         }
       ]
     }
@@ -101,9 +111,8 @@ function generateExpandPrompt(
 - 以 "${parentContext.nodeLabel}" 为根节点展开
 - 第一层: 3-${Math.min(6, config.maxChildrenPerNode)} 个子分支
 - 第二层: 每个分支下 2-${Math.min(5, config.maxChildrenPerNode)} 个子知识点
-- 总节点数不超过 25 个
-- 每个节点的 description 不超过 50 字
-- isExpandable: 当前路径深度已达 ${parentContext.path.length} 层，最大 ${config.maxTotalDepth} 层
+- 总节点数不超过 40 个
+- 每个节点的 description 需包含具体知识要点，不超过 100 字
 
 请返回严格 JSON 格式:
 {

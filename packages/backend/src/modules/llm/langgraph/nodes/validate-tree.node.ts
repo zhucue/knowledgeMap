@@ -14,8 +14,8 @@ export function validateTreeNode(
   const issues: string[] = [];
   const { nodeCount, maxDepth } = countTree(state.treeData);
 
-  if (nodeCount > 30) {
-    issues.push(`Node count ${nodeCount} exceeds limit of 30`);
+  if (nodeCount > 50) {
+    issues.push(`Node count ${nodeCount} exceeds limit of 50`);
   }
   if (nodeCount < 3) {
     issues.push(`Node count ${nodeCount} is too small (min 3)`);

@@ -10,6 +10,7 @@ import { OpenAIProvider } from './providers/openai.provider';
 import { ClaudeProvider } from './providers/claude.provider';
 import { TongyiProvider } from './providers/tongyi.provider';
 import { DoubaoProvider } from './providers/doubao.provider';
+import { DeepseekProvider } from './providers/deepseek.provider';
 
 @Injectable()
 export class LlmService implements OnModuleInit {
@@ -40,6 +41,10 @@ export class LlmService implements OnModuleInit {
     if (this.configService.get('LLM_DOUBAO_API_KEY')) {
       this.providers.set('doubao', new DoubaoProvider(this.configService));
       this.logger.log('Doubao provider registered');
+    }
+    if (this.configService.get('LLM_DEEPSEEK_API_KEY')) {
+      this.providers.set('deepseek', new DeepseekProvider(this.configService));
+      this.logger.log('DeepSeek provider registered');
     }
     if (this.providers.size === 0) {
       this.logger.warn('No LLM providers configured');

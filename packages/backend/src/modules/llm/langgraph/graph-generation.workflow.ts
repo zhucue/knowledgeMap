@@ -131,13 +131,6 @@ export class GraphGenerationWorkflow {
       );
       state = { ...state, ...persistResult };
 
-      emit({
-        step: 'complete',
-        progress: 100,
-        message: '图谱生成完成',
-        data: { graphId: state.graphId },
-      });
-
       return { graphId: state.graphId!, state };
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
