@@ -27,6 +27,11 @@ export class ResourceController {
     return this.resourceService.search(keyword || '', domain);
   }
 
+  @Get('node/:nodeId')
+  getByNodeId(@Param('nodeId') nodeId: string) {
+    return this.resourceService.getByNodeId(parseInt(nodeId, 10));
+  }
+
   @Get('history')
   getBrowseHistory(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     // TODO: get userId from JWT

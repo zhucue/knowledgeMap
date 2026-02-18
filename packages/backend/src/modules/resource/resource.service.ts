@@ -135,10 +135,25 @@ export class ResourceService {
   async getBrowseHistory(userId: number, page = 1, pageSize = 20) {
     const [items, total] = await this.browseHistoryRepo.findAndCount({
       where: { userId },
+      relations: ['resource'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
-    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        resourceId: item.resourceId,
+        resourceTitle: item.resource?.title || '',
+        resourceUrl: item.resource?.url || '',
+        resourceType: item.resource?.resourceType || '',
+        graphNodeId: item.graphNodeId,
+        createdAt: item.createdAt,
+      })),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 }

@@ -3,7 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { ResourceEntity } from './resource.entity';
 
 @Entity('resource_browse_history')
 export class ResourceBrowseHistoryEntity {
@@ -15,6 +18,10 @@ export class ResourceBrowseHistoryEntity {
 
   @Column({ type: 'bigint', unsigned: true, name: 'resource_id' })
   resourceId: number;
+
+  @ManyToOne(() => ResourceEntity)
+  @JoinColumn({ name: 'resource_id' })
+  resource: ResourceEntity;
 
   @Column({ type: 'bigint', unsigned: true, nullable: true, name: 'graph_node_id' })
   graphNodeId: number | null;

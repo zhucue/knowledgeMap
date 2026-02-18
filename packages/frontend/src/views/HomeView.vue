@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+  <div class="min-h-[calc(100vh-56px)] bg-gray-50 flex items-center justify-center px-4">
     <div class="max-w-2xl w-full text-center">
       <!-- 头部 -->
       <header class="mb-12">

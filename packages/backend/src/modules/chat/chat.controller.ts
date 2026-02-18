@@ -111,14 +111,14 @@ export class ChatController {
       );
 
       for await (const chunk of stream) {
-        res.write(`data: ${JSON.stringify({ content: chunk })}\\n\\n`);
+        res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
       }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\\n\\n`);
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      res.write(`data: ${JSON.stringify({ error: msg })}\\n\\n`);
+      res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
       res.end();
     }
   }

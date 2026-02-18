@@ -58,6 +58,15 @@
         />
       </div>
     </div>
+
+    <!-- 节点详情抽屉 -->
+    <NodeDetailDrawer
+      :visible="showNodeDrawer"
+      :node="selectedNode"
+      @close="showNodeDrawer = false"
+      @expand="handleDrawerExpand"
+      @ask="handleDrawerAsk"
+    />
   </div>
 </template>
 
@@ -69,6 +78,7 @@ import { useChatStore } from '@/stores/chat.store';
 import MindMapContainer from '@/components/mindmap/MindMapContainer.vue';
 import ChatPanel from '@/components/chat/ChatPanel.vue';
 import Toast from '@/components/common/Toast.vue';
+import NodeDetailDrawer from '@/components/mindmap/NodeDetailDrawer.vue';
 
 const route = useRoute();
 const graphStore = useGraphStore();
@@ -76,6 +86,8 @@ const chatStore = useChatStore();
 
 const showErrorToast = ref(false);
 const showChatUnavailableToast = ref(false);
+const showNodeDrawer = ref(false);
+const selectedNode = ref<any>(null);
 
 const graphTitle = computed(() => graphStore.currentGraph?.title || '');
 const treeData = computed(() => graphStore.currentGraph?.nodeTree?.[0] || null);
@@ -107,8 +119,20 @@ onMounted(async () => {
 });
 
 function handleNodeClick(node: any) {
-  console.log('Node clicked:', node);
-  // 可以在这里显示节点详情
+  selectedNode.value = node;
+  showNodeDrawer.value = true;
+}
+
+async function handleDrawerExpand(node: any) {
+  if (!graphStore.currentGraph) return;
+  showNodeDrawer.value = false;
+  await graphStore.expandNode(graphStore.currentGraph.id, node.id);
+}
+
+function handleDrawerAsk(node: any) {
+  showNodeDrawer.value = false;
+  // 通过 ChatPanel 发送追问消息
+  handleSendMessage(`请详细解释「${node.label}」这个知识点`);
 }
 
 async function handleNodeExpand(node: any) {
