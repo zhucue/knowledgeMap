@@ -95,8 +95,9 @@ onMounted(async () => {
     }
 
     // 创建或加载对话会话
-    if (graphStore.currentGraph && graphStore.currentGraph.id > 0) {
-      await chatStore.createOrLoadSession(graphStore.currentGraph.id);
+    const gid = Number(graphStore.currentGraph?.id);
+    if (gid > 0) {
+      await chatStore.createOrLoadSession(gid);
     }
   } catch (error) {
     // 显示错误通知

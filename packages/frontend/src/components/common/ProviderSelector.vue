@@ -84,6 +84,7 @@ function getProviderLabel(name: string): string {
     claude: 'Claude',
     tongyi: '通义千问',
     doubao: '豆包',
+    deepseek: 'DeepSeek',
   };
   return labels[name] || name;
 }
