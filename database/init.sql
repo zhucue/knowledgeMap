@@ -192,5 +192,74 @@ INSERT INTO resources (title, url, resource_type, domain, tags, description, qua
 ('机器学习入门', 'https://example.com/ml-intro', 'article', '人工智能', '["机器学习", "AI"]', '机器学习基础知识', 9.0)
 ON DUPLICATE KEY UPDATE title=title;
 
+-- ============================================
+-- 10. 知识库表
+-- ============================================
+CREATE TABLE IF NOT EXISTS knowledge_bases (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  owner_id BIGINT UNSIGNED NOT NULL COMMENT '所有者',
+  name VARCHAR(200) NOT NULL COMMENT '知识库名称',
+  description TEXT COMMENT '知识库描述',
+  visibility ENUM('private', 'shared', 'public') DEFAULT 'private' COMMENT '可见性',
+  document_count INT UNSIGNED DEFAULT 0 COMMENT '文档数量',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_owner_id (owner_id),
+  INDEX idx_visibility (visibility),
+  FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库表';
+
+-- ============================================
+-- 11. 知识库协作者表
+-- ============================================
+CREATE TABLE IF NOT EXISTS kb_collaborators (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  kb_id BIGINT UNSIGNED NOT NULL COMMENT '知识库ID',
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '协作者用户ID',
+  role ENUM('viewer', 'editor') DEFAULT 'viewer' COMMENT '协作角色',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_kb_user (kb_id, user_id),
+  INDEX idx_user_id (user_id),
+  FOREIGN KEY (kb_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库协作者表';
+
+-- ============================================
+-- 12. 知识库文档表
+-- ============================================
+CREATE TABLE IF NOT EXISTS kb_documents (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  kb_id BIGINT UNSIGNED NOT NULL COMMENT '所属知识库',
+  title VARCHAR(300) NOT NULL COMMENT '文档标题',
+  file_type ENUM('pdf', 'docx', 'md', 'txt') NOT NULL COMMENT '文件类型',
+  file_path VARCHAR(1000) NOT NULL COMMENT '文件存储路径',
+  file_size BIGINT UNSIGNED DEFAULT 0 COMMENT '文件大小(字节)',
+  status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending' COMMENT '处理状态',
+  chunk_count INT UNSIGNED DEFAULT 0 COMMENT '分块数量',
+  token_count INT UNSIGNED DEFAULT 0 COMMENT '总token数',
+  error_message TEXT COMMENT '处理失败原因',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_kb_id (kb_id),
+  INDEX idx_status (status),
+  FOREIGN KEY (kb_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档表';
+
+-- ============================================
+-- 13. 知识库分块表
+-- ============================================
+CREATE TABLE IF NOT EXISTS kb_chunks (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  document_id BIGINT UNSIGNED NOT NULL COMMENT '所属文档',
+  chunk_index INT UNSIGNED NOT NULL COMMENT '分块序号',
+  content TEXT NOT NULL COMMENT '分块内容',
+  heading_path VARCHAR(500) DEFAULT NULL COMMENT '章节路径(如: 第一章>1.1节)',
+  token_count INT UNSIGNED DEFAULT 0 COMMENT 'token数',
+  metadata JSON DEFAULT NULL COMMENT '扩展元数据',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_document_id (document_id),
+  FOREIGN KEY (document_id) REFERENCES kb_documents(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库分块表';
+
 -- 完成
 SELECT 'Database initialization completed!' AS status;
