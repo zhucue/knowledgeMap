@@ -15,6 +15,7 @@
         <div class="nav-links">
           <router-link to="/" class="nav-link" exact-active-class="nav-link-active">首页</router-link>
           <router-link to="/resources" class="nav-link" active-class="nav-link-active">资源库</router-link>
+          <router-link to="/knowledge-base" class="nav-link" active-class="nav-link-active">知识库</router-link>
           <router-link to="/history" class="nav-link" active-class="nav-link-active">历史</router-link>
         </div>
 

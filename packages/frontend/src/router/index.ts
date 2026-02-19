@@ -21,6 +21,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/knowledge-base',
+      name: 'knowledge-base',
+      component: () => import('@/views/KnowledgeBaseView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/knowledge-base/:id',
+      name: 'knowledge-base-detail',
+      component: () => import('@/views/KnowledgeBaseDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/history',
       name: 'history',
       component: () => import('@/views/HistoryView.vue'),
