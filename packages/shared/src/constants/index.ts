@@ -42,3 +42,32 @@ export enum RelationshipType {
   PART_OF = 'part_of',
   DEPENDS_ON = 'depends_on',
 }
+
+// 知识库可见性
+export enum KbVisibility {
+  PRIVATE = 'private',
+  SHARED = 'shared',
+  PUBLIC = 'public',
+}
+
+// 知识库协作者角色
+export enum KbCollaboratorRole {
+  VIEWER = 'viewer',
+  EDITOR = 'editor',
+}
+
+// 知识库文档处理状态
+export enum KbDocumentStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+}
+
+// 知识库支持的文件类型
+export enum KbFileType {
+  PDF = 'pdf',
+  DOCX = 'docx',
+  MD = 'md',
+  TXT = 'txt',
+}

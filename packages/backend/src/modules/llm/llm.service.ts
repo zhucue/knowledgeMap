@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
 import {
   ILlmProvider,
   LlmMessage,
@@ -94,5 +95,21 @@ export class LlmService implements OnModuleInit {
   ): AsyncIterable<string> {
     const provider = this.getProvider(providerName);
     return provider.chatCompletionStream(messages, options);
+  }
+
+  /**
+   * 创建文本 embedding 向量
+   * 使用 OpenAI 兼容接口
+   */
+  async createEmbedding(text: string): Promise<number[]> {
+    const apiKey = this.configService.get('EMBEDDING_API_KEY')
+      || this.configService.get('LLM_OPENAI_API_KEY');
+    const baseURL = this.configService.get('EMBEDDING_BASE_URL')
+      || this.configService.get('LLM_OPENAI_BASE_URL', 'https://api.openai.com/v1');
+    const model = this.configService.get('EMBEDDING_MODEL', 'text-embedding-3-small');
+
+    const client = new OpenAI({ apiKey, baseURL });
+    const response = await client.embeddings.create({ model, input: text });
+    return response.data[0].embedding;
   }
 }

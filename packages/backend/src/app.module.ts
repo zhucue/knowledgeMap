@@ -8,6 +8,7 @@ import { GraphModule } from './modules/graph/graph.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ResourceModule } from './modules/resource/resource.module';
 import { LlmModule } from './modules/llm/llm.module';
+import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { LlmModule } from './modules/llm/llm.module';
         username: config.get('DB_USERNAME', 'root'),
         password: config.get('DB_PASSWORD', ''),
         database: config.get('DB_DATABASE', 'knowledge_map'),
+        charset: 'utf8mb4',
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: config.get('NODE_ENV') === 'development',
         logging: config.get('NODE_ENV') === 'development',
@@ -34,6 +36,7 @@ import { LlmModule } from './modules/llm/llm.module';
     ChatModule,
     ResourceModule,
     LlmModule,
+    KnowledgeBaseModule,
   ],
 })
 export class AppModule {}
