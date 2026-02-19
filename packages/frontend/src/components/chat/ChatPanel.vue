@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div ref="messagesRef" class="chat-messages">
+    <div ref="messagesRef" class="chat-messages" @click="handleCopyClick">
       <div v-if="messages.length === 0" class="empty-state">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
           <path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 27.2 4.8 30.2 6.2 32.8L4 44L15.2 41.8C17.8 43.2 20.8 44 24 44Z" stroke="#D1D5DB" stroke-width="2"/>
@@ -82,6 +82,27 @@ watch(() => [props.messages.length, props.streamingContent], () => {
 function handleSend(content: string) {
   emit('send', content);
 }
+
+/** 事件委托：代码块复制按钮 */
+function handleCopyClick(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (!target.classList.contains('copy-btn')) return;
+
+  const codeBlock = target.closest('.code-block');
+  if (!codeBlock) return;
+
+  const codeEl = codeBlock.querySelector('code');
+  if (!codeEl) return;
+
+  navigator.clipboard.writeText(codeEl.textContent || '').then(() => {
+    target.textContent = '已复制';
+    target.classList.add('copied');
+    setTimeout(() => {
+      target.textContent = '复制';
+      target.classList.remove('copied');
+    }, 2000);
+  });
+}
 </script>
 
 <style scoped>
@@ -131,6 +152,7 @@ function handleSend(content: string) {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
   display: flex;
   flex-direction: column;

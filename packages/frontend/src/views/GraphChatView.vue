@@ -47,7 +47,15 @@
         />
       </div>
 
-      <div class="chat-section">
+      <!-- 可拖动分割手柄 -->
+      <div
+        class="resize-handle"
+        @mousedown="startResize"
+      >
+        <div class="resize-handle-line"></div>
+      </div>
+
+      <div class="chat-section" :style="{ width: chatWidth + 'px' }">
         <ChatPanel
           :session-id="chatStore.currentSession?.id"
           :messages="chatStore.messages"
@@ -71,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useGraphStore } from '@/stores/graph.store';
 import { useChatStore } from '@/stores/chat.store';
@@ -91,6 +99,42 @@ const selectedNode = ref<any>(null);
 
 const graphTitle = computed(() => graphStore.currentGraph?.title || '');
 const treeData = computed(() => graphStore.currentGraph?.nodeTree?.[0] || null);
+
+// 侧边栏拖动调整宽度
+const chatWidth = ref(400);
+const MIN_CHAT_WIDTH = 280;
+const MAX_CHAT_WIDTH = 700;
+let isResizing = false;
+
+function startResize(e: MouseEvent) {
+  e.preventDefault();
+  isResizing = true;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', onResize);
+  document.addEventListener('mouseup', stopResize);
+}
+
+function onResize(e: MouseEvent) {
+  if (!isResizing) return;
+  // 侧边栏在右侧，宽度 = 视口右边界 - 鼠标位置
+  const newWidth = window.innerWidth - e.clientX;
+  chatWidth.value = Math.min(MAX_CHAT_WIDTH, Math.max(MIN_CHAT_WIDTH, newWidth));
+}
+
+function stopResize() {
+  isResizing = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  document.removeEventListener('mousemove', onResize);
+  document.removeEventListener('mouseup', stopResize);
+}
+
+onUnmounted(() => {
+  // 清理可能残留的事件监听
+  document.removeEventListener('mousemove', onResize);
+  document.removeEventListener('mouseup', stopResize);
+});
 
 onMounted(async () => {
   const topic = route.query.topic as string;
@@ -236,30 +280,66 @@ async function handleNewChat() {
 
 .view-body {
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 0;
+  display: flex;
   overflow: hidden;
 }
 
 .mindmap-section {
+  flex: 1;
   position: relative;
   overflow: hidden;
+  min-width: 0;
+}
+
+.resize-handle {
+  flex-shrink: 0;
+  width: 6px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background: #E5E7EB;
+}
+
+.resize-handle-line {
+  width: 2px;
+  height: 32px;
+  border-radius: 1px;
+  background: #D1D5DB;
+  transition: background 0.15s;
+}
+
+.resize-handle:hover .resize-handle-line,
+.resize-handle:active .resize-handle-line {
+  background: #3B82F6;
 }
 
 .chat-section {
-  border-left: 1px solid #E5E7EB;
+  flex-shrink: 0;
   background: white;
+  overflow: hidden;
 }
 
 @media (max-width: 1024px) {
   .view-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 400px;
+    flex-direction: column;
+  }
+
+  .resize-handle {
+    display: none;
   }
 
   .chat-section {
-    border-left: none;
+    width: 100% !important;
+    height: 400px;
     border-top: 1px solid #E5E7EB;
   }
 }

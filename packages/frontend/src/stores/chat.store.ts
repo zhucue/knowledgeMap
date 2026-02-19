@@ -151,37 +151,67 @@ export const useChatStore = defineStore('chat', () => {
     const eventSource = new EventSource(url);
 
     return new Promise((resolve, reject) => {
+      // 标记 done 事件是否已处理，防止 onerror 重复处理
+      let settled = false;
+
+      // 无活动超时保护（60 秒无新内容则强制结束）
+      let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+      const INACTIVITY_TIMEOUT = 60_000;
+
+      function resetInactivityTimer() {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+          if (settled) return;
+          finishStream();
+        }, INACTIVITY_TIMEOUT);
+      }
+
+      /** 将已累积内容作为完整回复保存并结束流式 */
+      function finishStream() {
+        if (settled) return;
+        settled = true;
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        isStreaming.value = false;
+        eventSource.close();
+
+        if (streamingContent.value) {
+          const assistantMessage: ChatMessage = {
+            id: Date.now() + 1,
+            role: 'assistant',
+            content: streamingContent.value,
+            createdAt: new Date().toISOString(),
+          };
+          messages.value.push(assistantMessage);
+          streamingContent.value = '';
+          resolve(assistantMessage);
+        } else {
+          streamingContent.value = '';
+          reject(new Error('SSE connection closed without response'));
+        }
+      }
+
+      resetInactivityTimer();
+
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
 
           if (data.done) {
             // 流式输出完成
-            isStreaming.value = false;
-
-            // 添加完整的助手消息到列表
-            const assistantMessage: ChatMessage = {
-              id: Date.now() + 1,
-              role: 'assistant',
-              content: streamingContent.value,
-              createdAt: new Date().toISOString(),
-            };
-            messages.value.push(assistantMessage);
-
-            // 清空流式内容
-            streamingContent.value = '';
-
-            eventSource.close();
-            resolve(assistantMessage);
+            finishStream();
           } else if (data.error) {
-            // 发生错误
+            // 服务端返回错误
+            if (settled) return;
+            settled = true;
+            if (inactivityTimer) clearTimeout(inactivityTimer);
             isStreaming.value = false;
             streamingContent.value = '';
             eventSource.close();
             reject(new Error(data.error));
           } else if (data.content) {
-            // 累积流式内容
+            // 累积流式内容，重置超时计时器
             streamingContent.value += data.content;
+            resetInactivityTimer();
           }
         } catch (error) {
           console.error('Failed to parse SSE data:', error);
@@ -189,10 +219,8 @@ export const useChatStore = defineStore('chat', () => {
       };
 
       eventSource.onerror = () => {
-        isStreaming.value = false;
-        streamingContent.value = '';
-        eventSource.close();
-        reject(new Error('SSE connection failed'));
+        // 连接断开：若已有累积内容则视为正常结束（done 事件可能丢失）
+        finishStream();
       };
     });
   }

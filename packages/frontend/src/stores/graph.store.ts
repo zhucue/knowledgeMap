@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import apiClient from '@/services/api.client';
+import { useAuthStore } from './auth.store';
 
 export const useGraphStore = defineStore('graph', () => {
   // 当前知识图谱数据
@@ -58,7 +59,11 @@ export const useGraphStore = defineStore('graph', () => {
     currentStep.value = '开始生成...';
     errorMessage.value = '';
 
-    const url = `/api/graph/generate/stream?topic=${encodeURIComponent(topic)}${provider ? `&provider=${provider}` : ''}`;
+    const authStore = useAuthStore();
+    const userId = authStore.user?.id;
+    let url = `/api/graph/generate/stream?topic=${encodeURIComponent(topic)}`;
+    if (userId) url += `&userId=${userId}`;
+    if (provider) url += `&provider=${provider}`;
     const eventSource = new EventSource(url);
 
     return new Promise((resolve, reject) => {
@@ -120,7 +125,9 @@ export const useGraphStore = defineStore('graph', () => {
   async function expandNode(graphId: number, nodeId: number, depth = 2) {
     expandingNodeId.value = nodeId;
     try {
-      const result = await apiClient.post(`/graph/${graphId}/expand/${nodeId}`, { depth });
+      const authStore = useAuthStore();
+      const userId = authStore.user?.id;
+      const result = await apiClient.post(`/graph/${graphId}/expand/${nodeId}`, { depth, userId });
 
       // 更新当前图谱数据
       if (currentGraph.value) {
@@ -140,9 +147,10 @@ export const useGraphStore = defineStore('graph', () => {
   // 获取用户图谱历史
   async function getHistory(page = 1, pageSize = 20) {
     try {
-      // TODO: 从 JWT 获取 userId
+      const authStore = useAuthStore();
+      const userId = authStore.user?.id;
       const result = await apiClient.get('/graph/history', {
-        params: { userId: 1, page, pageSize },
+        params: { userId, page, pageSize },
       });
       return result;
     } catch (error) {
