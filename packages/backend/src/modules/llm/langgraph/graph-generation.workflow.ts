@@ -3,6 +3,8 @@ import { LlmService } from '../llm.service';
 import { GraphService } from '../../graph/graph.service';
 import { TopicService } from '../../topic/topic.service';
 import { ResourceService } from '../../resource/resource.service';
+import { RetrievalService } from '../../knowledge-base/services/retrieval.service';
+import { KnowledgeBaseService } from '../../knowledge-base/knowledge-base.service';
 import {
   GraphGenerationState,
   DEFAULT_CONFIG,
@@ -14,6 +16,7 @@ import { generateTreeNode } from './nodes/generate-tree.node';
 import { matchResourcesNode } from './nodes/match-resources.node';
 import { validateTreeNode } from './nodes/validate-tree.node';
 import { persistGraphNode } from './nodes/persist-graph.node';
+import { retrieveContextNode } from './nodes/retrieve-context.node';
 
 // 进度回调函数类型
 export interface SSECallback {
@@ -35,6 +38,8 @@ export class GraphGenerationWorkflow {
     private readonly graphService: GraphService,
     private readonly topicService: TopicService,
     private readonly resourceService: ResourceService,
+    private readonly retrievalService: RetrievalService,
+    private readonly kbService: KnowledgeBaseService,
   ) {}
 
   // 执行图谱生成工作流
@@ -65,6 +70,7 @@ export class GraphGenerationWorkflow {
       treeData: null,
       resourceMatches: [],
       validation: null,
+      ragContext: [],
       retryCount: 0,
       currentStep: 'init',
       error: null,
@@ -79,15 +85,23 @@ export class GraphGenerationWorkflow {
       state = { ...state, ...analyzeResult };
       this.logger.log(`Analysis: ${JSON.stringify(state.analysis)}`);
 
-      // Step 2 & 3: 生成 + 验证（支持重试）
+      // Step 2: 检索知识库（RAG）
+      emit({ step: 'retrieveContext', progress: 25, message: '检索知识库...' });
+      const ragResult = await retrieveContextNode(state, this.retrievalService, this.kbService);
+      state = { ...state, ...ragResult };
+      if (state.ragContext.length > 0) {
+        this.logger.log(`RAG: 检索到 ${state.ragContext.length} 条相关内容`);
+      }
+
+      // Step 3 & 4: 生成 + 验证（支持重试）
       let retries = 0;
       const maxRetries = 2;
 
       while (retries <= maxRetries) {
-        // Step 2: 生成知识树
+        // Step 3: 生成知识树
         emit({
           step: 'generateTree',
-          progress: 30 + retries * 5,
+          progress: 35 + retries * 5,
           message: retries > 0 ? '重新生成知识结构...' : '生成知识结构...',
         });
         const treeResult = await generateTreeNode(state, this.llmService);
@@ -99,7 +113,7 @@ export class GraphGenerationWorkflow {
           continue;
         }
 
-        // Step 3: 验证
+        // Step 4: 验证
         emit({ step: 'validateTree', progress: 55, message: '校验图谱质量...' });
         const validateResult = validateTreeNode(state);
         state = { ...state, ...validateResult };
@@ -117,14 +131,14 @@ export class GraphGenerationWorkflow {
         this.logger.warn('Validation failed after retries, proceeding anyway');
       }
 
-      // Step 4: 匹配资源
+      // Step 5: 匹配资源
       emit({ step: 'matchResources', progress: 70, message: '匹配学习资源...' });
       const resourceResult = await matchResourcesNode(
         state, this.llmService, this.resourceService,
       );
       state = { ...state, ...resourceResult };
 
-      // Step 5: 持久化保存
+      // Step 6: 持久化保存
       emit({ step: 'persistGraph', progress: 90, message: '保存图谱...' });
       const persistResult = await persistGraphNode(
         state, this.graphService, this.topicService, this.resourceService,

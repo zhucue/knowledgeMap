@@ -29,6 +29,14 @@ export interface ValidationResult {
   issues: string[];
 }
 
+// RAG 检索到的知识块
+export interface RagChunk {
+  content: string;
+  source: string;
+  headingPath: string;
+  score: number;
+}
+
 // 父节点上下文（用于扩展示意图）
 export interface ParentNodeContext {
   nodeId: number;
@@ -59,6 +67,7 @@ export const GraphGenerationAnnotation = Annotation.Root({
   treeData: Annotation<TreeNode | null>,
   resourceMatches: Annotation<ResourceMatch[]>,
   validation: Annotation<ValidationResult | null>,
+  ragContext: Annotation<RagChunk[]>,
 
   // 控制
   retryCount: Annotation<number>,

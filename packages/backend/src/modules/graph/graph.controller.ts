@@ -126,7 +126,7 @@ export class GraphController {
   async expandNode(
     @Param('id') graphId: string,
     @Param('nodeId') nodeId: string,
-    @Body() body: { depth?: number } = {},
+    @Body() body: { depth?: number; userId?: number } = {},
   ) {
     const gId = parseInt(graphId, 10);
     const nId = parseInt(nodeId, 10);
@@ -143,6 +143,7 @@ export class GraphController {
 
     const result = await this.workflow.run(graph.topic?.name || graph.title, {
       graphId: gId,
+      userId: body.userId,
       parentNodeContext: {
         nodeId: nId,
         nodeLabel: node.label,
@@ -171,6 +172,7 @@ export class GraphController {
     @Param('id') graphId: string,
     @Param('nodeId') nodeId: string,
     @Query('depth') depth: string,
+    @Query('userId') userId: string,
     @Res() res: Response,
   ) {
     const gId = parseInt(graphId, 10);
@@ -195,6 +197,7 @@ export class GraphController {
     try {
       await this.workflow.run(graph.topic?.name || graph.title, {
         graphId: gId,
+        userId: userId ? parseInt(userId, 10) : undefined,
         parentNodeContext: {
           nodeId: nId,
           nodeLabel: node.label,

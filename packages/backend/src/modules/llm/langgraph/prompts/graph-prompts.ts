@@ -1,4 +1,4 @@
-import { GenerationConfig, ParentNodeContext } from '../state';
+import { GenerationConfig, ParentNodeContext, RagChunk } from '../state';
 
 // 构建输入分析提示词
 export function analyzeInputPrompt(userInput: string): string {
@@ -23,9 +23,10 @@ export function generateTreePrompt(
   config: GenerationConfig,
   parentContext?: ParentNodeContext | null,
   previousIssues?: string[],
+  ragContext?: RagChunk[],
 ): string {
   if (parentContext) {
-    return generateExpandPrompt(userInput, analysis, config, parentContext, previousIssues);
+    return generateExpandPrompt(userInput, analysis, config, parentContext, previousIssues, ragContext);
   }
 
   let prompt = `你是一个知识结构化专家。请为以下主题生成知识结构树。
@@ -83,6 +84,14 @@ export function generateTreePrompt(
 
 只返回 JSON，不要其他内容。`;
 
+  // 注入 RAG 知识库参考资料
+  if (ragContext?.length) {
+    const refs = ragContext
+      .map((r, i) => `[REF${i + 1}] 来源: ${r.source}${r.headingPath ? ` > ${r.headingPath}` : ''}\n${r.content}`)
+      .join('\n\n');
+    prompt += `\n\n以下是知识库中的参考资料，请参考这些内容来丰富节点描述，确保知识点准确：\n${refs}`;
+  }
+
   if (previousIssues?.length) {
     prompt += `\n\n上一次生成存在以下问题，请修正：\n${previousIssues.map((i) => `- ${i}`).join('\n')}`;
   }
@@ -97,6 +106,7 @@ function generateExpandPrompt(
   config: GenerationConfig,
   parentContext: ParentNodeContext,
   previousIssues?: string[],
+  ragContext?: RagChunk[],
 ): string {
   const pathStr = parentContext.path.join(' → ');
   let prompt = `你是一个知识结构化专家。请为以下知识节点生成子知识结构。
@@ -125,6 +135,14 @@ function generateExpandPrompt(
 }
 
 只返回 JSON，不要其他内容。`;
+
+  // 注入 RAG 知识库参考资料
+  if (ragContext?.length) {
+    const refs = ragContext
+      .map((r, i) => `[REF${i + 1}] 来源: ${r.source}${r.headingPath ? ` > ${r.headingPath}` : ''}\n${r.content}`)
+      .join('\n\n');
+    prompt += `\n\n以下是知识库中的参考资料，请参考这些内容来丰富节点描述：\n${refs}`;
+  }
 
   if (previousIssues?.length) {
     prompt += `\n\n上一次生成存在以下问题，请修正：\n${previousIssues.map((i) => `- ${i}`).join('\n')}`;

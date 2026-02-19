@@ -6,6 +6,7 @@ import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { LlmModule } from '../llm/llm.module';
 import { GraphModule } from '../graph/graph.module';
+import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module';
 
 /**
  * 聊天模块
@@ -16,6 +17,7 @@ import { GraphModule } from '../graph/graph.module';
     TypeOrmModule.forFeature([ChatSessionEntity, ChatMessageEntity]),
     LlmModule,
     GraphModule,
+    KnowledgeBaseModule,
   ],
   controllers: [ChatController],
   providers: [ChatService],
