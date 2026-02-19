@@ -57,18 +57,6 @@ const graph = ref<Graph>();
 // 折叠状态管理：记录每个节点的展开状态
 const expandedMap = reactive<Record<string, boolean>>({});
 
-// 获取节点深度
-function getNodeDepth(root: TreeNode, targetId: number, depth = 0): number {
-  if (root.id === targetId) return depth;
-  if (root.children) {
-    for (const child of root.children) {
-      const d = getNodeDepth(child, targetId, depth + 1);
-      if (d >= 0) return d;
-    }
-  }
-  return -1;
-}
-
 // 初始化折叠状态：深度 <= 1 展开，其余折叠
 function initExpandedState(node: TreeNode, depth = 0) {
   const key = String(node.id);
@@ -167,7 +155,6 @@ async function renderTree(root: TreeNode) {
 
   // LR 布局，更像思维导图
   const layout = new DagreLayout({
-    type: 'dagre',
     rankdir: 'LR',
     nodesep: 40,
     ranksep: 60,
@@ -200,7 +187,7 @@ async function renderTree(root: TreeNode) {
 }
 
 // 将树形结构转换为图数据格式（只遍历展开的节点）
-function convertTreeToGraph(root: TreeNode, depth = 0) {
+function convertTreeToGraph(root: TreeNode) {
   const nodes: any[] = [];
   const edges: any[] = [];
 

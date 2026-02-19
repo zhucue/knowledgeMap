@@ -205,7 +205,7 @@ async function handleSendMessage(content: string) {
 
   // 发送消息
   try {
-    await chatStore.sendMessage(chatStore.currentSession.id, content);
+    await chatStore.sendMessage(chatStore.currentSession!.id, content);
   } catch (error) {
     console.error('Failed to send message:', error);
     showErrorToast.value = true;

@@ -248,4 +248,38 @@ function handleFilter() {
 onMounted(() => {
   resourceStore.fetchResources(1);
 });
+
+/** 添加资源 */
+async function handleAddResource() {
+  addError.value = '';
+  addSubmitting.value = true;
+  try {
+    const tags = addForm.tagsStr
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+    await resourceStore.createResource({
+      title: addForm.title,
+      url: addForm.url,
+      resourceType: addForm.resourceType,
+      domain: addForm.domain,
+      tags,
+      description: addForm.description || undefined,
+    });
+    showAddModal.value = false;
+    // 重置表单
+    addForm.title = '';
+    addForm.url = '';
+    addForm.resourceType = '';
+    addForm.domain = '';
+    addForm.tagsStr = '';
+    addForm.description = '';
+    // 刷新列表
+    await resourceStore.fetchResources(1);
+  } catch (error: any) {
+    addError.value = error.response?.data?.message || error.message || '添加失败';
+  } finally {
+    addSubmitting.value = false;
+  }
+}
 </script>

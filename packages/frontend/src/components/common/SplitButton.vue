@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 
 interface Props {
   disabled?: boolean;
@@ -50,7 +50,6 @@ const emit = defineEmits<{
 
 const showMenu = ref(false);
 const menuRef = ref<HTMLElement>();
-const buttonRef = ref<HTMLElement>();
 const menuStyle = ref({});
 
 function toggleMenu() {

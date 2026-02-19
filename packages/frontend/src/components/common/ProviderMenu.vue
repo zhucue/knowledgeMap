@@ -47,8 +47,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
 interface Provider {
   name: string;
   label: string;
