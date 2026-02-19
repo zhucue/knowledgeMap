@@ -7,3 +7,15 @@ dist
 Thumbs.db
 coverage
 .turbo
+
+# Claude Code 本地配置
+.claude/settings.local.json
+
+# Docker 运行时数据
+docker/volumes/
+
+# 用户上传文件
+packages/backend/uploads/
+
+# TypeScript 构建缓存
+*.tsbuildinfo
