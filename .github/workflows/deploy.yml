@@ -62,7 +62,7 @@ jobs:
             git pull origin main
 
             echo "==> 安装依赖"
-            pnpm install --frozen-lockfile --ignore-scripts
+            pnpm install --frozen-lockfile
 
             echo "==> 构建 shared"
             pnpm --filter @knowledge-map/shared build
