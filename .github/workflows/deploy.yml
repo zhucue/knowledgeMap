@@ -1,0 +1,86 @@
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "BUSINESS.md"
+      - "docs/**"
+      - "LICENSE"
+  workflow_dispatch:
+
+jobs:
+  # ── CI：类型检查 + 构建验证 ──────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 安装 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建 shared
+        run: pnpm --filter @knowledge-map/shared build
+
+      - name: 构建 frontend（含 vue-tsc 类型检查）
+        run: pnpm --filter @knowledge-map/frontend build
+
+      - name: 构建 backend
+        run: pnpm --filter @knowledge-map/backend build
+
+  # ── CD：SSH 拉取部署 ─────────────────────────────────────
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 部署到服务器
+        # 锁定 commit SHA，防止 tag 被篡改
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd /opt/knowledge
+
+            echo "==> 拉取最新代码"
+            git pull origin main
+
+            echo "==> 安装依赖"
+            pnpm install --frozen-lockfile --ignore-scripts
+
+            echo "==> 构建 shared"
+            pnpm --filter @knowledge-map/shared build
+
+            echo "==> 构建 frontend"
+            pnpm --filter @knowledge-map/frontend build
+
+            echo "==> 构建 backend"
+            pnpm --filter @knowledge-map/backend build
+
+            echo "==> 同步后端 .env"
+            cp .env packages/backend/.env
+
+            echo "==> 重启后端服务"
+            pm2 restart knowledge-backend
+
+            echo "==> 健康检查"
+            sleep 5
+            curl -sf http://localhost:3000/api/llm/providers || { echo "健康检查失败"; exit 1; }
+
+            echo "==> 部署完成"
