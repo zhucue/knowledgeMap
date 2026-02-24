@@ -1,13 +1,6 @@
 name: CI / CD
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "*.md"
-      - "BUSINESS.md"
-      - "docs/**"
-      - "LICENSE"
   workflow_dispatch:
 
 jobs:
